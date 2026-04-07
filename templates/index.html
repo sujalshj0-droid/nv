@@ -1,34 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>IG Name Changer</title>
+    <title>IG Group Name Changer</title>
     <style>
-        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; text-align: center; }
-        input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; }
-        .status { padding: 20px; background: #eee; margin-top: 20px; }
-        #startBtn { background: green; color: white; padding: 10px 20px; }
-        #stopBtn { background: red; color: white; padding: 10px 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #444; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 1em; transition: 0.3s; }
+        #startBtn { background: #28a745; color: white; }
+        #startBtn:hover { background: #218838; }
+        #stopBtn { background: #dc3545; color: white; }
+        #stopBtn:hover { background: #c82333; }
+        .status-box { margin-top: 30px; padding: 20px; background: #e9ecef; border-left: 5px solid #007bff; border-radius: 4px; }
+        #log { color: #0056b3; font-family: monospace; }
     </style>
 </head>
 <body>
-    <h1>IG Name Changer</h1>
-    <input type="text" id="sid" placeholder="Session ID">
-    <textarea id="names" placeholder="Names (comma separated): Name1, Name2, Name3"></textarea>
-    <input type="number" id="delay" placeholder="Delay between changes (seconds)" value="60">
-    <input type="number" id="break_after" placeholder="Break after how many changes?" value="5">
-    <input type="number" id="break_duration" placeholder="Break duration (seconds)" value="600">
-    
-    <button id="startBtn" onclick="startTask()">Start</button>
-    <button id="stopBtn" onclick="stopTask()">Stop</button>
+    <div class="container">
+        <h2>IG Group Automator</h2>
+        
+        <label>Session ID</label>
+        <input type="text" id="sid" placeholder="Paste your Session ID here">
 
-    <div class="status">
-        <strong>Status:</strong> <span id="log">Waiting...</span>
+        <label>Thread ID (The numbers at the end of the GC URL)</label>
+        <input type="text" id="tid" placeholder="e.g. 9525484444218120">
+
+        <label>Names to Cycle (Separate with commas)</label>
+        <textarea id="names" placeholder="Hater 1, Hater 2, Hater 3" rows="3"></textarea>
+
+        <div style="display: flex; gap: 15px;">
+            <div style="flex: 1;">
+                <label>Delay (Sec)</label>
+                <input type="number" id="delay" value="60">
+            </div>
+            <div style="flex: 1;">
+                <label>Break After</label>
+                <input type="number" id="break_after" value="10">
+            </div>
+        </div>
+
+        <label>Break Length (Sec)</label>
+        <input type="number" id="break_duration" value="300">
+
+        <div class="btn-group">
+            <button id="startBtn" onclick="startTask()">START BOT</button>
+            <button id="stopBtn" onclick="stopTask()">STOP BOT</button>
+        </div>
+
+        <div class="status-box">
+            <strong>System Status:</strong> <span id="log">Awaiting Start...</span>
+        </div>
     </div>
 
     <script>
         function startTask() {
             const data = {
                 sid: document.getElementById('sid').value,
+                tid: document.getElementById('tid').value,
                 names: document.getElementById('names').value,
                 delay: document.getElementById('delay').value,
                 break_after: document.getElementById('break_after').value,
@@ -44,6 +75,13 @@
         setInterval(() => {
             fetch('/status').then(res => res.json()).then(data => {
                 document.getElementById('log').innerText = data.log;
+                if(data.running) {
+                    document.getElementById('startBtn').style.opacity = "0.5";
+                    document.getElementById('startBtn').disabled = true;
+                } else {
+                    document.getElementById('startBtn').style.opacity = "1";
+                    document.getElementById('startBtn').disabled = false;
+                }
             });
         }, 2000);
     </script>
