@@ -1,0 +1,80 @@
+import os
+import time
+import threading
+from flask import Flask, render_template, request, jsonify
+from instagrapi import Client
+
+app = Flask(__name__)
+
+# Global variables to control the loop
+running = False
+status_log = "System Ready"
+
+def change_name_loop(session_id, names_list, delay, break_after, break_duration):
+    global running, status_log
+    cl = Client()
+    
+    try:
+        status_log = "Logging in..."
+        cl.login_by_sessionid(session_id)
+        status_log = "Logged in successfully!"
+    except Exception as e:
+        status_log = f"Login Failed: {str(e)}"
+        running = False
+        return
+
+    change_count = 0
+    while running:
+        for name in names_list:
+            if not running: break
+            
+            try:
+                cl.account_edit(full_name=name)
+                change_count += 1
+                status_log = f"Changed to: {name} (Total: {change_count})"
+                
+                # Check for break
+                if change_count % break_after == 0:
+                    status_log = f"Taking a break for {break_duration}s..."
+                    time.sleep(break_duration)
+                else:
+                    time.sleep(delay)
+                    
+            except Exception as e:
+                status_log = f"Error: {str(e)}"
+                time.sleep(60) # Wait a minute if rate limited
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/start', methods=['POST'])
+def start():
+    global running
+    if not running:
+        data = request.json
+        names = data.get('names', '').split(',')
+        sid = data.get('sid')
+        delay = int(data.get('delay', 10))
+        break_after = int(data.get('break_after', 5))
+        break_duration = int(data.get('break_duration', 300))
+        
+        running = True
+        thread = threading.Thread(target=change_name_loop, args=(sid, names, delay, break_after, break_duration))
+        thread.start()
+        return jsonify({"status": "Started"})
+    return jsonify({"status": "Already running"})
+
+@app.route('/stop', methods=['POST'])
+def stop():
+    global running
+    running = False
+    return jsonify({"status": "Stopped"})
+
+@app.route('/status')
+def status():
+    return jsonify({"log": status_log, "running": running})
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
